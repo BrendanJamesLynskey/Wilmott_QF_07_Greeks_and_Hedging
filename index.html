@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wilmott QF 07 &mdash; The Greeks and Hedging</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}]})"></script>
+    <style>
+        :root {
+            --bg-primary: #0a0a0a; --bg-card: #0d1117; --bg-code: #161b22;
+            --text-primary: #e6edf3; --text-secondary: #8b949e;
+            --accent: #fbbf24; --accent-dim: #fbbf2444; --accent-glow: #fbbf2433;
+            --accent-2: #f472b6; --accent-3: #a78bfa; --accent-4: #34d399;
+            --accent-5: #60a5fa;
+            --border: #21262d;
+            --font-display: 'Space Grotesk', sans-serif;
+            --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
+            --font-body: 'Inter', sans-serif;
+            --max-width: 900px;
+        }
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+        html { scroll-behavior: smooth; }
+        body { background: var(--bg-primary); color: var(--text-primary); font-family: var(--font-body); font-size: 17px; line-height: 1.7; overflow-x: hidden; }
+        .hero { min-height: 100vh; display: flex; flex-direction: column; justify-content: center; align-items: center; padding: 2rem 1.5rem; text-align: center; position: relative; }
+        .hero::before { content: ''; position: absolute; top: 0; left: 50%; transform: translateX(-50%); width: 700px; height: 600px; background: radial-gradient(circle, var(--accent-glow) 0%, transparent 70%); pointer-events: none; z-index: 0; }
+        .hero > * { position: relative; z-index: 1; }
+        .series-label { font-family: var(--font-mono); font-size: 0.85rem; color: var(--accent); letter-spacing: 0.15em; text-transform: uppercase; margin-bottom: 1rem; }
+        .hero h1 { font-family: var(--font-display); font-size: clamp(2rem, 5vw, 3.2rem); font-weight: 700; color: var(--text-primary); line-height: 1.2; margin-bottom: 1rem; }
+        .hero h1 .accent { color: var(--accent); }
+        .hero .subtitle { font-size: 1.1rem; color: var(--text-secondary); max-width: 640px; margin-bottom: 2rem; }
+        .tags { display: flex; flex-wrap: wrap; gap: 0.5rem; justify-content: center; margin-bottom: 2.5rem; }
+        .tag { font-family: var(--font-mono); font-size: 0.75rem; padding: 0.25rem 0.75rem; border-radius: 999px; border: 1px solid var(--accent); color: var(--accent); background: var(--accent-dim); white-space: nowrap; }
+        .pipeline { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 0.25rem; margin-bottom: 1rem; max-width: var(--max-width); }
+        .pipeline-step { font-family: var(--font-mono); font-size: 0.7rem; padding: 0.3rem 0.7rem; background: var(--bg-card); border: 1px solid var(--border); border-radius: 4px; color: var(--text-secondary); white-space: nowrap; }
+        .pipeline-arrow { color: var(--accent); font-size: 0.9rem; font-weight: 700; }
+        .slide { min-height: 100vh; max-width: var(--max-width); margin: 0 auto; padding: 4rem 1.5rem; position: relative; display: flex; flex-direction: column; justify-content: center; }
+        .slide-number { font-family: var(--font-display); font-size: 5rem; font-weight: 700; color: var(--accent-dim); position: absolute; top: 2rem; right: 1.5rem; line-height: 1; user-select: none; }
+        .slide h2 { font-family: var(--font-display); font-size: 1.9rem; font-weight: 700; color: var(--accent); margin-bottom: 1.5rem; line-height: 1.25; }
+        .slide h3 { font-family: var(--font-display); font-size: 1.3rem; font-weight: 600; color: var(--text-primary); margin-top: 1.5rem; margin-bottom: 0.75rem; }
+        .slide p { margin-bottom: 1rem; color: var(--text-secondary); }
+        .slide p strong { color: var(--text-primary); }
+        .slide ul, .slide ol { margin-bottom: 1rem; padding-left: 1.5rem; color: var(--text-secondary); }
+        .slide li { margin-bottom: 0.4rem; }
+        .slide li strong { color: var(--text-primary); }
+        .slide code { background: var(--bg-code); padding: 0.1rem 0.35rem; border-radius: 3px; font-family: var(--font-mono); font-size: 0.85em; color: var(--accent); }
+        .diagram-grid { display: grid; gap: 0.75rem; margin: 1.5rem 0; padding: 1.5rem; background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; }
+        .diagram-grid.cols-2 { grid-template-columns: 1fr 1fr; }
+        .diagram-grid.cols-3 { grid-template-columns: 1fr 1fr 1fr; }
+        .diagram-grid.cols-4 { grid-template-columns: 1fr 1fr 1fr 1fr; }
+        .diagram-panel { padding: 1rem; background: var(--bg-code); border: 1px solid var(--border); border-radius: 6px; }
+        .diagram-panel.accent-border { border-left: 3px solid var(--accent); }
+        .diagram-panel.r { border-left: 3px solid var(--accent-2); }
+        .diagram-panel.p { border-left: 3px solid var(--accent-3); }
+        .diagram-panel.g { border-left: 3px solid var(--accent-4); }
+        .diagram-panel.b { border-left: 3px solid var(--accent-5); }
+        .diagram-panel h4 { font-family: var(--font-display); font-size: 1rem; color: var(--accent); margin-bottom: 0.5rem; }
+        .diagram-panel.r h4 { color: var(--accent-2); }
+        .diagram-panel.p h4 { color: var(--accent-3); }
+        .diagram-panel.g h4 { color: var(--accent-4); }
+        .diagram-panel.b h4 { color: var(--accent-5); }
+        .diagram-panel p, .diagram-panel ul { font-size: 0.9rem; }
+        .callout { background: var(--bg-card); border-left: 3px solid var(--accent); border-radius: 0 8px 8px 0; padding: 1rem 1.25rem; margin: 1.25rem 0; }
+        .callout p { margin-bottom: 0; }
+        .callout .callout-label { font-family: var(--font-mono); font-size: 0.75rem; color: var(--accent); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 0.3rem; }
+        .quote { font-family: var(--font-display); font-size: 1.1rem; font-style: italic; color: var(--text-primary); padding: 1rem 1.5rem; border-left: 3px solid var(--accent); background: var(--bg-card); margin: 1.25rem 0; border-radius: 0 8px 8px 0; }
+        .quote .attr { display: block; margin-top: 0.5rem; font-style: normal; font-size: 0.85rem; color: var(--text-secondary); font-family: var(--font-mono); }
+        .canvas-wrap { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 1rem; margin: 1.25rem 0; overflow-x: auto; }
+        .canvas-wrap canvas, .canvas-wrap svg { display: block; margin: 0 auto; max-width: 100%; }
+        .control-panel { background: var(--bg-card); border: 1px solid var(--border); border-radius: 8px; padding: 1.25rem; margin: 1.25rem 0; }
+        .control-row { display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem; margin-bottom: 0.75rem; }
+        .control-row label { font-family: var(--font-mono); font-size: 0.8rem; color: var(--text-secondary); min-width: 160px; }
+        .control-row input[type="range"] { flex: 1; min-width: 150px; accent-color: var(--accent); }
+        .control-row select, .control-row input[type="number"] { background: var(--bg-code); border: 1px solid var(--border); color: var(--text-primary); border-radius: 4px; padding: 0.3rem 0.5rem; font-family: var(--font-mono); font-size: 0.8rem; }
+        .control-row .val { font-family: var(--font-mono); font-size: 0.85rem; color: var(--accent); min-width: 80px; text-align: right; }
+        .btn { font-family: var(--font-mono); font-size: 0.8rem; padding: 0.4rem 0.9rem; background: var(--accent-dim); color: var(--accent); border: 1px solid var(--accent); border-radius: 4px; cursor: pointer; transition: background 0.15s ease; }
+        .btn:hover { background: rgba(251,191,36,0.25); }
+        .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+        .btn.secondary { background: var(--bg-code); color: var(--text-secondary); border-color: var(--border); }
+        .metric-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 0.5rem; margin-top: 0.75rem; }
+        .metric { background: var(--bg-code); border: 1px solid var(--border); border-radius: 6px; padding: 0.6rem 0.8rem; text-align: center; }
+        .metric .metric-label { font-family: var(--font-mono); font-size: 0.7rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.08em; }
+        .metric .metric-value { font-family: var(--font-display); font-size: 1.25rem; color: var(--accent); font-weight: 600; margin-top: 0.2rem; }
+        .contents-list { list-style: none; padding-left: 0; counter-reset: contents; }
+        .contents-list li { counter-increment: contents; padding: 0.6rem 0; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 1rem; }
+        .contents-list li:last-child { border-bottom: none; }
+        .contents-list li::before { content: counter(contents, decimal-leading-zero); font-family: var(--font-mono); font-size: 0.85rem; color: var(--accent); min-width: 2rem; }
+        .contents-list a { color: var(--text-primary); text-decoration: none; }
+        .contents-list a:hover { color: var(--accent); }
+        .footer { text-align: center; padding: 3rem 1.5rem; color: var(--text-secondary); font-size: 0.85rem; border-top: 1px solid var(--border); max-width: var(--max-width); margin: 0 auto; }
+        .footer a { color: var(--accent); text-decoration: none; }
+        .katex { color: var(--text-primary); }
+        .katex-display { margin: 1rem 0; overflow-x: auto; overflow-y: hidden; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.9rem; margin: 1rem 0; }
+        th { background: var(--bg-code); color: var(--accent); font-weight: 600; text-align: left; padding: 0.6rem 0.85rem; border-bottom: 1px solid var(--border); font-family: var(--font-display); }
+        td { padding: 0.5rem 0.85rem; border-bottom: 1px solid var(--border); color: var(--text-secondary); vertical-align: top; }
+        tr:last-child td { border-bottom: none; }
+        tr:nth-child(even) td { background: rgba(13, 17, 23, 0.5); }
+        @media (max-width: 640px) {
+            .slide { padding: 3rem 1rem; min-height: auto; }
+            .slide-number { font-size: 3rem; top: 1.5rem; right: 1rem; }
+            .slide h2 { font-size: 1.5rem; }
+            .diagram-grid.cols-2, .diagram-grid.cols-3, .diagram-grid.cols-4 { grid-template-columns: 1fr; }
+            .hero h1 { font-size: 1.8rem; }
+        }
+    </style>
+</head>
+<body>
+
+<header class="hero">
+    <div class="series-label">Paul Wilmott Introduces Quantitative Finance &mdash; Deck 07</div>
+    <h1>The <span class="accent">Greeks</span> and Hedging</h1>
+    <p class="subtitle">Closed-form prices and their partial derivatives &mdash; $\Delta$, $\Gamma$, $\Theta$, $\mathcal{V}$, $\rho$ &mdash; and how a trader actually hedges with them.</p>
+
+    <div class="tags">
+        <span class="tag">$N(d_1)$</span><span class="tag">delta</span>
+        <span class="tag">gamma</span><span class="tag">theta</span>
+        <span class="tag">vega</span><span class="tag">rho</span>
+        <span class="tag">implied vol</span><span class="tag">delta-hedging</span>
+    </div>
+
+    <div class="pipeline">
+        <span class="pipeline-step">closed-form $C, P$</span>
+        <span class="pipeline-arrow">&rarr;</span>
+        <span class="pipeline-step">$\partial_S, \partial_t, \partial_\sigma, \partial_r$</span>
+        <span class="pipeline-arrow">&rarr;</span>
+        <span class="pipeline-step">$\Delta, \Gamma, \Theta, \mathcal{V}, \rho$</span>
+        <span class="pipeline-arrow">&rarr;</span>
+        <span class="pipeline-step">discrete rebalancing</span>
+        <span class="pipeline-arrow">&rarr;</span>
+        <span class="pipeline-step">$\sqrt{\delta t}$ error</span>
+    </div>
+</header>
+
+<section class="slide" id="slide-00">
+    <div class="slide-number">00</div>
+    <h2>Topics We'll Cover</h2>
+    <ul class="contents-list">
+        <li><a href="#slide-01">Closed-form prices: call, put, parity</a></li>
+        <li><a href="#slide-02">Binary (digital) options</a></li>
+        <li><a href="#slide-03">Delta &mdash; $\Delta = N(d_1)$ for a call</a></li>
+        <li><a href="#slide-04">Gamma &mdash; convexity</a></li>
+        <li><a href="#slide-05">Theta &mdash; time decay</a></li>
+        <li><a href="#slide-06">Vega &mdash; sensitivity to volatility</a></li>
+        <li><a href="#slide-07">Rho, speed, charm, colour</a></li>
+        <li><a href="#slide-08">Implied volatility &mdash; the smile</a></li>
+        <li><a href="#slide-09">Delta hedging in practice</a></li>
+        <li><a href="#slide-10">Interactive: Greeks explorer</a></li>
+    </ul>
+</section>
+
+<section class="slide" id="slide-01">
+    <div class="slide-number">01</div>
+    <h2>Closed-form Solutions</h2>
+    <p>Solving the Black&ndash;Scholes PDE under the European call's terminal condition $V(S,T) = \max(S - K, 0)$ gives the famous formula:</p>
+
+    <p>$$\boxed{\;C(S,t) = S\,N(d_1) - K e^{-r\tau}\,N(d_2)\;}$$</p>
+
+    <p>where $\tau = T - t$ is the time to maturity and</p>
+
+    <p>$$d_1 = \frac{\log(S/K) + (r + \tfrac{1}{2}\sigma^2)\,\tau}{\sigma\sqrt{\tau}}, \qquad d_2 = d_1 - \sigma\sqrt{\tau}.$$</p>
+
+    <p>$N(\cdot)$ is the standard normal cumulative distribution function. The corresponding put price follows from put&ndash;call parity:</p>
+
+    <p>$$P(S,t) = C(S,t) - S + K\,e^{-r\tau} = K\,e^{-r\tau} N(-d_2) - S\,N(-d_1).$$</p>
+
+    <div class="diagram-grid cols-2">
+        <div class="diagram-panel accent-border">
+            <h4>Reading the formula</h4>
+            <p>$S\,N(d_1)$ is the present value of receiving the share <em>only when in the money</em>; $K e^{-r\tau} N(d_2)$ is the present value of paying the strike <em>only when in the money</em>. The difference is the value of the option to exchange them.</p>
+        </div>
+        <div class="diagram-panel g">
+            <h4>What $d_1$ and $d_2$ mean</h4>
+            <p>$N(d_2)$ is the risk-neutral probability that $S_T > K$ (the call ends in the money). $N(d_1)$ has a similar interpretation under a measure where the stock is the numeraire. Their difference reflects the variance of $\log S$.</p>
+        </div>
+    </div>
+
+    <div class="callout">
+        <div class="callout-label">A useful identity</div>
+        <p>$S\, n(d_1) = K e^{-r\tau}\, n(d_2)$, where $n(\cdot)$ is the standard normal PDF. This collapses many of the apparent uglinesses in the Greeks below into clean single-PDF terms.</p>
+    </div>
+</section>
+
+<section class="slide" id="slide-02">
+    <div class="slide-number">02</div>
+    <h2>Binary (Digital) Options</h2>
+    <p>A <strong>digital call</strong> pays $1$ if $S_T > K$ and zero otherwise. Its present value is exactly the risk-neutral probability of ending in the money, discounted:</p>
+
+    <p>$$C_{\text{dig}}(S,t) = e^{-r\tau}\,N(d_2).$$</p>
+
+    <p>The matching <strong>digital put</strong> pays $1$ if $S_T < K$:</p>
+
+    <p>$$P_{\text{dig}}(S,t) = e^{-r\tau}\,N(-d_2).$$</p>
+
+    <p>Digital + complementary digital = $e^{-r\tau}$ (you're certain to receive &pound;1, just possibly via the other gate).</p>
+
+    <div class="diagram-grid cols-2">
+        <div class="diagram-panel b">
+            <h4>Tight gamma at the strike</h4>
+            <p>The payoff of a digital is a step function in $S_T$. Near $t = T$ and $S \approx K$, the value function develops an arbitrarily steep slope &mdash; tiny moves in $S$ cause large value swings. Gamma blows up. These contracts are notoriously hard to hedge near expiry.</p>
+        </div>
+        <div class="diagram-panel p">
+            <h4>Vanilla + digital = a barrier-ish stack</h4>
+            <p>A vanilla European call is a continuum of digitals, since $\max(S-K, 0) = \int_K^\infty \mathbf{1}_{S > k}\,dk$. So $C$ is a "stack" of $C_{\text{dig}}$ over $k$. This is the seed of static-replication arguments for exotics.</p>
+        </div>
+    </div>
+</section>
+
+<section class="slide" id="slide-03">
+    <div class="slide-number">03</div>
+    <h2>Delta &mdash; $\Delta = \dfrac{\partial V}{\partial S}$</h2>
+    <p>The first Greek &mdash; the share-equivalence of an option, and the hedge ratio of deck 06.</p>
+
+    <p>$$\Delta_{\text{call}} = N(d_1), \qquad \Delta_{\text{put}} = N(d_1) - 1 = -N(-d_1).$$</p>
+
+    <p>For a call: $\Delta \in (0, 1)$. Deep out of the money it's near $0$; deep in the money it's near $1$. At $S = K$ at the money, $\Delta \approx \tfrac{1}{2}$ &mdash; the option behaves like half a share.</p>
+
+    <div class="diagram-grid cols-2">
+        <div class="diagram-panel accent-border">
+            <h4>Why it's the hedge ratio</h4>
+            <p>To hedge a long call: short $\Delta$ shares. To hedge a long put ($\Delta < 0$): long $|\Delta|$ shares. After hedging, the portfolio's value is to <em>first order</em> insensitive to $S$ &mdash; the residual exposure is second-order (gamma).</p>
+        </div>
+        <div class="diagram-panel g">
+            <h4>Aggregating</h4>
+            <p>Delta is additive over a book: $\Delta_{\text{book}} = \sum_i n_i\, \Delta_i$. A trader watches the book's net delta and trades shares to bring it back to zero each rebalance. Most of risk management starts here.</p>
+        </div>
+    </div>
+
+    <div class="callout">
+        <div class="callout-label">Probability-as-delta</div>
+        <p>$N(d_1)$ is the probability that $S_T > K$ in a measure where $S$ is the numeraire. Practitioners often quote a call's "delta" interchangeably with its "in-the-money probability" &mdash; close but not identical.</p>
+    </div>
+</section>
+
+<section class="slide" id="slide-04">
+    <div class="slide-number">04</div>
+    <h2>Gamma &mdash; Convexity</h2>
+    <p>Second derivative of the price with respect to spot:</p>
+
+    <p>$$\Gamma = \frac{\partial^2 V}{\partial S^2} = \frac{n(d_1)}{S\,\sigma\sqrt{\tau}}.$$</p>
+
+    <p>Same formula for calls and puts (the difference between them is the linear $S - K e^{-r\tau}$, which has zero gamma).</p>
+
+    <p>Gamma is always positive for long options. It peaks at the money and falls off to zero far from the strike or as $\tau \to 0$ &mdash; though right at the strike near expiry it spikes sharply.</p>
+
+    <div class="diagram-grid cols-2">
+        <div class="diagram-panel p">
+            <h4>Why gamma is your friend (when long)</h4>
+            <p>A long option position has positive gamma: when $S$ moves, your delta moves in your favour. You re-hedge by buying low and selling high &mdash; mechanically. The expected gain over a small interval is</p>
+            <p>$$\tfrac{1}{2}\,\Gamma\,\sigma^2 S^2\,\delta t.$$</p>
+            <p>This is the It&ocirc; term from deck 05, made concrete.</p>
+        </div>
+        <div class="diagram-panel r">
+            <h4>Why gamma is your enemy (when short)</h4>
+            <p>Short options have negative gamma: you re-hedge by buying high and selling low. Each oscillation of $S$ costs you. Over a small interval the expected loss is the same $\tfrac{1}{2}\,|\Gamma|\,\sigma^2 S^2\,\delta t$ &mdash; precisely compensated by the theta you collect (next slide).</p>
+        </div>
+    </div>
+</section>
+
+<section class="slide" id="slide-05">
+    <div class="slide-number">05</div>
+    <h2>Theta &mdash; Time Decay</h2>
+    <p>Sensitivity to time. With $\tau = T - t$ a call's theta is</p>
+
+    <p>$$\Theta_{\text{call}} = -\frac{S\,n(d_1)\,\sigma}{2\sqrt{\tau}} - r K e^{-r\tau} N(d_2).$$</p>
+
+    <p>Theta is typically negative for long options &mdash; the value bleeds away as time passes, all else equal. (Deep-in-the-money European puts can have positive theta because the discounting effect dominates &mdash; an oddity of European-only contracts.)</p>
+
+    <p>Theta is most negative <em>at the money near expiry</em>, where there's the most time value to lose and where the gamma is largest. The two effects are not coincidental.</p>
+
+    <div class="callout">
+        <div class="callout-label">The BS PDE as a Greeks identity</div>
+        <p>Rewriting Black&ndash;Scholes:</p>
+        <p>$$\Theta + r\,S\,\Delta + \tfrac{1}{2}\sigma^2 S^2\,\Gamma = r\,V.$$</p>
+        <p>For a delta-hedged portfolio ($\Delta = V_S$ cancels with the share leg) this reduces to $\Theta + \tfrac{1}{2}\sigma^2 S^2\,\Gamma = r(V - SV_S)$ &mdash; the gamma you collect exactly pays the theta you bleed, after rate costs. <em>This identity is the entire game.</em></p>
+    </div>
+
+    <h3>Reporting convention</h3>
+    <p>Traders usually quote theta <em>per calendar day</em>: $\Theta/365$. So "a theta of $-0.04$" means the option loses $4$&nbsp;p of value per day, all else held fixed.</p>
+</section>
+
+<section class="slide" id="slide-06">
+    <div class="slide-number">06</div>
+    <h2>Vega &mdash; Sensitivity to Volatility</h2>
+    <p>The most important Greek that isn't a Greek letter. Sensitivity of price to the input volatility $\sigma$:</p>
+
+    <p>$$\mathcal{V} = \frac{\partial V}{\partial \sigma} = S\,\sqrt{\tau}\,n(d_1).$$</p>
+
+    <p>Same for calls and puts. Always positive for long options. Like gamma, peaks at the money. Unlike gamma, increases with time to maturity.</p>
+
+    <div class="diagram-grid cols-2">
+        <div class="diagram-panel b">
+            <h4>Practical units</h4>
+            <p>Vega is usually quoted <em>per volatility point</em>: $\mathcal{V}/100$. "Vega of $0.20$" means the option gains $20$&nbsp;p in value if $\sigma$ rises from, say, $20\%$ to $21\%$.</p>
+        </div>
+        <div class="diagram-panel g">
+            <h4>Why it matters</h4>
+            <p>The Black&ndash;Scholes derivation assumed $\sigma$ was a constant. In reality the market re-prices implied volatility every day, and vega is the P&amp;L impact of those re-pricings. Vega risk dwarfs gamma risk for many books.</p>
+        </div>
+    </div>
+
+    <div class="callout">
+        <div class="callout-label">Vega&ndash;gamma relation</div>
+        <p>From the explicit formulas:</p>
+        <p>$$\mathcal{V} = S^2\,\sigma\,\tau\,\Gamma.$$</p>
+        <p>So vega and gamma are not independent &mdash; you can't hedge one without affecting the other. Multi-Greek hedging therefore needs multiple instruments.</p>
+    </div>
+</section>
+
+<section class="slide" id="slide-07">
+    <div class="slide-number">07</div>
+    <h2>Rho, Speed, Charm, Colour</h2>
+    <p>The supporting cast. None of them dominate day-to-day P&amp;L for short-dated options, but each matters somewhere.</p>
+
+    <table>
+        <thead><tr><th>Greek</th><th>Definition</th><th>What it captures</th></tr></thead>
+        <tbody>
+            <tr><td>Rho ($\rho$)</td><td>$\partial V/\partial r$</td><td>Rate sensitivity. Matters for long-dated FX and rate-product options.</td></tr>
+            <tr><td>Speed</td><td>$\partial^3 V/\partial S^3$</td><td>How fast gamma changes with spot. Big near digital-like payoffs.</td></tr>
+            <tr><td>Charm</td><td>$\partial \Delta/\partial t$</td><td>How delta moves with time. Important for delta hedgers as expiry approaches.</td></tr>
+            <tr><td>Colour</td><td>$\partial \Gamma/\partial t$</td><td>How gamma changes with time.</td></tr>
+            <tr><td>Vanna</td><td>$\partial^2 V/\partial S \partial \sigma$</td><td>How delta changes with vol; sells hedge ratios on the smile.</td></tr>
+            <tr><td>Volga</td><td>$\partial^2 V/\partial \sigma^2$</td><td>Convexity in vol &mdash; the heart of vega&ndash;gamma trading.</td></tr>
+        </tbody>
+    </table>
+
+    <p>Closed forms exist for all of these under BS &mdash; tedious but mechanical. In a real risk system, every product reports all six.</p>
+
+    <div class="callout">
+        <div class="callout-label">Why second-order Greeks dominate exotics</div>
+        <p>Vanilla calls have smooth Greeks. Barriers, digitals, double-no-touch &mdash; these can have <em>spiked</em> second-order Greeks near barriers or strikes, and those spikes drive the hedging error and the bid&ndash;offer.</p>
+    </div>
+</section>
+
+<section class="slide" id="slide-08">
+    <div class="slide-number">08</div>
+    <h2>Implied Volatility</h2>
+    <p>The BS formula maps $(S, K, T, r, \sigma) \to V$. Given a market price $V^*$, invert numerically for $\sigma$:</p>
+
+    <p>$$V_{\text{BS}}(S, K, T, r, \sigma_{\text{imp}}) = V^*.$$</p>
+
+    <p>$\sigma_{\text{imp}}$ is the <strong>implied volatility</strong>. It is not what $\sigma$ "is"; it is the number that, plugged into a known-wrong formula, gives a known-right price.</p>
+
+    <h3>The smile</h3>
+    <p>If BS were true, $\sigma_{\text{imp}}$ would be a constant across strikes and maturities. It isn't. The market quotes higher implied vol for OTM puts (and OTM calls) than for at-the-money options &mdash; the <em>smile</em>, or, in equities, the asymmetric <em>skew</em>.</p>
+
+    <div class="diagram-grid cols-3">
+        <div class="diagram-panel accent-border">
+            <h4>Why a smile?</h4>
+            <p>Real returns have heavier tails than lognormal. The market correctly prices the bigger probability of extreme moves; BS, blind to that, requires a higher $\sigma$ to reproduce the same price for OTM options.</p>
+        </div>
+        <div class="diagram-panel r">
+            <h4>Why a skew (equities)?</h4>
+            <p>Crashes are bigger than rallies. Demand for downside protection (OTM puts) bids up their prices, lifting their implied vol relative to OTM calls.</p>
+        </div>
+        <div class="diagram-panel p">
+            <h4>What's next</h4>
+            <p>Deck 08 in this series digs into the smile in earnest &mdash; sticky-strike vs sticky-delta, local vol, and stochastic vol models that reproduce the observed surface.</p>
+        </div>
+    </div>
+</section>
+
+<section class="slide" id="slide-09">
+    <div class="slide-number">09</div>
+    <h2>Delta Hedging in Practice</h2>
+    <p>BS assumed continuous trading. Real traders rebalance at discrete times. What goes wrong?</p>
+
+    <h3>Hedging error scales as $\sqrt{\delta t}$</h3>
+    <p>If you rebalance every $\delta t$, the cumulative hedging error over $[0,T]$ is approximately normal with standard deviation</p>
+    <p>$$\mathrm{SD}(\text{error}) \approx \frac{1}{\sqrt{2}}\,\sigma^2 S^2 \, |\Gamma|\, \sqrt{\delta t \cdot T}.$$</p>
+    <p>Halving $\delta t$ reduces the error only by a factor of $\sqrt{2}$ &mdash; not by 2. Transaction costs work the other way (more rebalances = more costs). The trader picks an interior optimum.</p>
+
+    <div class="diagram-grid cols-3">
+        <div class="diagram-panel g">
+            <h4>Gamma hedging</h4>
+            <p>Hold another <em>option</em> to neutralise gamma. The first option's gamma is offset by an opposite gamma in a hedge option; only one option per book of options need be traded for delta.</p>
+        </div>
+        <div class="diagram-panel p">
+            <h4>Vega hedging</h4>
+            <p>Trade vol-sensitive instruments (other vanillas, variance swaps) to neutralise vega. Most large books are run vega-neutral first, then delta-neutral.</p>
+        </div>
+        <div class="diagram-panel b">
+            <h4>Static vs dynamic</h4>
+            <p>Some exotics (e.g. some barriers) admit a <em>static</em> replication by a basket of vanillas held to expiry &mdash; no rebalancing. The trader vastly prefers static; dynamic hedging has slippage.</p>
+        </div>
+    </div>
+
+    <div class="callout">
+        <div class="callout-label">Whaley's $1/\sqrt{n}$ result</div>
+        <p>For $n$ equal rebalances over $[0,T]$, the variance of the hedging error scales as $1/n$. Doubling $n$ halves the variance but doubles the costs &mdash; classical bias&ndash;variance optimisation pitched as a trading problem.</p>
+    </div>
+</section>
+
+<section class="slide" id="slide-10">
+    <div class="slide-number">10</div>
+    <h2>Interactive: Greeks Explorer</h2>
+    <p>Three small subplots: $V$ vs $S$, $\Delta$ vs $S$, $\Gamma$ vs $S$. The current $S$ is marked on each. Slide $K, T, \sigma, r$ and toggle call/put. The metric grid below reports the trader-quoted Greeks at the current $S$.</p>
+
+    <div class="canvas-wrap">
+        <canvas id="g-canvas" width="840" height="280"></canvas>
+    </div>
+
+    <div class="control-panel">
+        <div class="control-row">
+            <label for="S-slider">Spot $S$</label>
+            <input type="range" id="S-slider" min="20" max="200" step="1" value="100">
+            <span class="val" id="S-val">100</span>
+        </div>
+        <div class="control-row">
+            <label for="K-slider">Strike $K$</label>
+            <input type="range" id="K-slider" min="40" max="160" step="1" value="100">
+            <span class="val" id="K-val">100</span>
+        </div>
+        <div class="control-row">
+            <label for="T-slider">Maturity $T$ (yr)</label>
+            <input type="range" id="T-slider" min="0.05" max="3" step="0.05" value="0.5">
+            <span class="val" id="T-val">0.50</span>
+        </div>
+        <div class="control-row">
+            <label for="sig-slider">Volatility $\sigma$</label>
+            <input type="range" id="sig-slider" min="0.05" max="0.8" step="0.01" value="0.25">
+            <span class="val" id="sig-val">0.25</span>
+        </div>
+        <div class="control-row">
+            <label for="r-slider">Rate $r$</label>
+            <input type="range" id="r-slider" min="0" max="0.15" step="0.005" value="0.04">
+            <span class="val" id="r-val">0.040</span>
+        </div>
+        <div class="control-row">
+            <label for="type-sel">Option type</label>
+            <select id="type-sel">
+                <option value="call" selected>Call</option>
+                <option value="put">Put</option>
+            </select>
+            <span class="val" style="min-width:0;flex:1;text-align:left;">&nbsp;</span>
+        </div>
+        <div class="metric-grid">
+            <div class="metric"><div class="metric-label">Price $V$</div><div class="metric-value" id="m-V">&mdash;</div></div>
+            <div class="metric"><div class="metric-label">$\Delta$</div><div class="metric-value" id="m-D">&mdash;</div></div>
+            <div class="metric"><div class="metric-label">$\Gamma$</div><div class="metric-value" id="m-G">&mdash;</div></div>
+            <div class="metric"><div class="metric-label">$\Theta$ /day</div><div class="metric-value" id="m-Th">&mdash;</div></div>
+            <div class="metric"><div class="metric-label">$\mathcal{V}$ /vol-pt</div><div class="metric-value" id="m-Vg">&mdash;</div></div>
+            <div class="metric"><div class="metric-label">$\rho$ /rate-pt</div><div class="metric-value" id="m-Rh">&mdash;</div></div>
+        </div>
+    </div>
+
+    <p>Watch gamma peak at the money and rise sharply as $T \to 0$. Watch the delta curve sharpen from a smooth S-shape (long-dated) to a step (near expiry). Push $\sigma$ up and gamma flattens out across more strikes. Toggle to a put and see delta sit in $(-1, 0)$.</p>
+</section>
+
+<footer class="footer">
+    <p>Deck 07 of the <a href="https://github.com/BrendanJamesLynskey/Wilmott_QF_Hub">Paul Wilmott Introduces Quantitative Finance &mdash; Companion Series</a>.</p>
+    <p style="margin-top: 0.6rem;">Companion to chapters 8 and 10 of <em>Paul Wilmott Introduces Quantitative Finance</em>, 2nd edition (Wiley, 2007).</p>
+</footer>
+
+<script>
+(function() {
+    const $ = id => document.getElementById(id);
+    const sS = $('S-slider'), sK = $('K-slider'), sT = $('T-slider'),
+          sSig = $('sig-slider'), sR = $('r-slider'), sel = $('type-sel');
+    const vS = $('S-val'), vK = $('K-val'), vT = $('T-val'),
+          vSig = $('sig-val'), vR = $('r-val');
+    const mV = $('m-V'), mD = $('m-D'), mG = $('m-G'),
+          mTh = $('m-Th'), mVg = $('m-Vg'), mRh = $('m-Rh');
+    const canvas = $('g-canvas'), ctx = canvas.getContext('2d');
+
+    function fmt(x, dp) { return (isNaN(x) ? '—' : x.toFixed(dp == null ? 3 : dp)); }
+
+    function erf(x) {
+        const sign = x < 0 ? -1 : 1;
+        x = Math.abs(x);
+        const a1 =  0.254829592, a2 = -0.284496736, a3 =  1.421413741,
+              a4 = -1.453152027, a5 =  1.061405429, p  =  0.3275911;
+        const t = 1.0 / (1.0 + p * x);
+        const y = 1.0 - (((((a5*t + a4)*t) + a3)*t + a2)*t + a1)*t * Math.exp(-x*x);
+        return sign * y;
+    }
+    function N(x) { return 0.5 * (1 + erf(x / Math.SQRT2)); }
+    function n(x) { return Math.exp(-x*x/2) / Math.sqrt(2*Math.PI); }
+
+    function greeks(S, K, r, sig, tau, isCall) {
+        if (tau <= 1e-10 || S <= 1e-10 || sig <= 1e-10) {
+            const intr = isCall ? Math.max(S - K, 0) : Math.max(K - S, 0);
+            return { V: intr, Delta: NaN, Gamma: NaN, Theta: NaN, Vega: 0, Rho: NaN };
+        }
+        const sqrtTau = Math.sqrt(tau);
+        const d1 = (Math.log(S / K) + (r + 0.5 * sig * sig) * tau) / (sig * sqrtTau);
+        const d2 = d1 - sig * sqrtTau;
+        const Nd1 = N(d1), Nd2 = N(d2), Nmd1 = N(-d1), Nmd2 = N(-d2);
+        const nd1 = n(d1);
+        const disc = Math.exp(-r * tau);
+        let V, Delta, Theta, Rho;
+        if (isCall) {
+            V = S * Nd1 - K * disc * Nd2;
+            Delta = Nd1;
+            Theta = -S * nd1 * sig / (2 * sqrtTau) - r * K * disc * Nd2;
+            Rho = K * tau * disc * Nd2;
+        } else {
+            V = K * disc * Nmd2 - S * Nmd1;
+            Delta = Nd1 - 1;
+            Theta = -S * nd1 * sig / (2 * sqrtTau) + r * K * disc * Nmd2;
+            Rho = -K * tau * disc * Nmd2;
+        }
+        const Gamma = nd1 / (S * sig * sqrtTau);
+        const Vega = S * sqrtTau * nd1;
+        return { V, Delta, Gamma, Theta, Vega, Rho };
+    }
+
+    function draw() {
+        const S = +sS.value, K = +sK.value, T = +sT.value,
+              sig = +sSig.value, r = +sR.value, isCall = sel.value === 'call';
+        vS.textContent = String(S);
+        vK.textContent = String(K);
+        vT.textContent = fmt(T, 2);
+        vSig.textContent = fmt(sig, 2);
+        vR.textContent = fmt(r);
+
+        const g = greeks(S, K, r, sig, T, isCall);
+        mV.textContent = fmt(g.V);
+        mD.textContent = fmt(g.Delta);
+        mG.textContent = fmt(g.Gamma, 4);
+        mTh.textContent = fmt(g.Theta / 365);
+        mVg.textContent = fmt(g.Vega / 100);
+        mRh.textContent = fmt(g.Rho / 100);
+
+        // Three subplots
+        const Wc = canvas.width, Hc = canvas.height;
+        ctx.clearRect(0, 0, Wc, Hc);
+        const pad = 10;
+        const panelW = (Wc - 4 * pad) / 3;
+        const titleH = 18;
+        const panelY = pad + titleH;
+        const panelH = Hc - panelY - 24;
+
+        const colors = ['#fbbf24', '#34d399', '#a78bfa'];
+        const titles = ['V vs S', 'Delta vs S', 'Gamma vs S'];
+
+        const Smin = 20, Smax = 200;
+        const np = 200;
+        const Svals = new Float64Array(np + 1);
+        const Vvals = new Float64Array(np + 1);
+        const Dvals = new Float64Array(np + 1);
+        const Gvals = new Float64Array(np + 1);
+        for (let k = 0; k <= np; k++) {
+            const Sk = Smin + (Smax - Smin) * k / np;
+            Svals[k] = Sk;
+            const gk = greeks(Sk, K, r, sig, T, isCall);
+            Vvals[k] = gk.V;
+            Dvals[k] = isNaN(gk.Delta) ? (isCall ? (Sk > K ? 1 : 0) : (Sk < K ? -1 : 0)) : gk.Delta;
+            Gvals[k] = isNaN(gk.Gamma) ? 0 : gk.Gamma;
+        }
+        const datasets = [Vvals, Dvals, Gvals];
+
+        for (let p = 0; p < 3; p++) {
+            const xp = pad + p * (panelW + pad);
+
+            // Title
+            ctx.fillStyle = colors[p];
+            ctx.font = '12px JetBrains Mono';
+            ctx.fillText(titles[p], xp + 4, pad + 12);
+
+            // Frame
+            ctx.strokeStyle = '#21262d';
+            ctx.lineWidth = 1;
+            ctx.strokeRect(xp, panelY, panelW, panelH);
+
+            const data = datasets[p];
+            let ymn = Infinity, ymx = -Infinity;
+            for (let k = 0; k <= np; k++) {
+                if (data[k] < ymn) ymn = data[k];
+                if (data[k] > ymx) ymx = data[k];
+            }
+            if (p === 1) { // delta: extend a tiny bit
+                ymn = isCall ? -0.05 : -1.05;
+                ymx = isCall ? 1.05 : 0.05;
+            } else {
+                const span = Math.max(ymx - ymn, 1e-9);
+                ymn -= 0.07 * span; ymx += 0.07 * span;
+            }
+
+            // zero line
+            if (ymn < 0 && ymx > 0) {
+                const yz = panelY + panelH - (0 - ymn) / (ymx - ymn) * panelH;
+                ctx.strokeStyle = '#3a4252';
+                ctx.beginPath(); ctx.moveTo(xp, yz); ctx.lineTo(xp + panelW, yz); ctx.stroke();
+            }
+
+            // strike line
+            const Kx = xp + (K - Smin) / (Smax - Smin) * panelW;
+            if (Kx > xp && Kx < xp + panelW) {
+                ctx.strokeStyle = '#3a4252';
+                ctx.setLineDash([3, 3]);
+                ctx.beginPath(); ctx.moveTo(Kx, panelY); ctx.lineTo(Kx, panelY + panelH); ctx.stroke();
+                ctx.setLineDash([]);
+            }
+
+            // Curve
+            ctx.strokeStyle = colors[p];
+            ctx.lineWidth = 1.8;
+            ctx.beginPath();
+            for (let k = 0; k <= np; k++) {
+                const px = xp + (Svals[k] - Smin) / (Smax - Smin) * panelW;
+                const py = panelY + panelH - (data[k] - ymn) / (ymx - ymn) * panelH;
+                if (k === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+            }
+            ctx.stroke();
+
+            // Spot marker
+            const Sx = xp + (S - Smin) / (Smax - Smin) * panelW;
+            if (Sx > xp && Sx < xp + panelW) {
+                let yVal;
+                if (p === 0) yVal = g.V;
+                else if (p === 1) yVal = isNaN(g.Delta) ? (isCall ? (S > K ? 1 : 0) : (S < K ? -1 : 0)) : g.Delta;
+                else yVal = isNaN(g.Gamma) ? 0 : g.Gamma;
+                const sy = panelY + panelH - (yVal - ymn) / (ymx - ymn) * panelH;
+                ctx.strokeStyle = '#f472b6';
+                ctx.lineWidth = 1;
+                ctx.beginPath(); ctx.moveTo(Sx, panelY); ctx.lineTo(Sx, panelY + panelH); ctx.stroke();
+                ctx.fillStyle = '#f472b6';
+                ctx.beginPath(); ctx.arc(Sx, sy, 3.5, 0, 2 * Math.PI); ctx.fill();
+            }
+
+            // axis labels
+            ctx.fillStyle = '#8b949e';
+            ctx.font = '10px JetBrains Mono';
+            ctx.fillText('S=' + Smin, xp + 2, panelY + panelH + 12);
+            ctx.fillText('S=' + Smax, xp + panelW - 44, panelY + panelH + 12);
+            // y range label
+            ctx.fillText(fmt(ymx, p === 2 ? 3 : 2), xp + 4, panelY + 22);
+            ctx.fillText(fmt(ymn, p === 2 ? 3 : 2), xp + 4, panelY + panelH - 4);
+        }
+    }
+
+    [sS, sK, sT, sSig, sR].forEach(el => el.addEventListener('input', draw));
+    sel.addEventListener('change', draw);
+    draw();
+})();
+</script>
+</body>
+</html>
