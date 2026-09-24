@@ -12,12 +12,12 @@
     <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js" onload="renderMathInElement(document.body,{delimiters:[{left:'$$',right:'$$',display:true},{left:'$',right:'$',display:false}]})"></script>
     <style>
         :root {
-            --bg-primary: #0a0a0a; --bg-card: #0d1117; --bg-code: #161b22;
-            --text-primary: #e6edf3; --text-secondary: #8b949e;
-            --accent: #fbbf24; --accent-dim: #fbbf2444; --accent-glow: #fbbf2433;
-            --accent-2: #f472b6; --accent-3: #a78bfa; --accent-4: #34d399;
-            --accent-5: #60a5fa;
-            --border: #21262d;
+            --bg-primary: #eef1e8; --bg-card: #e6eadf; --bg-code: #dce1d3;
+            --text-primary: #1c292b; --text-secondary: #61695c;
+            --accent: #835a02; --accent-dim: #835a0244; --accent-glow: #835a021a;
+            --accent-2: #9c405e; --accent-3: #633d6a; --accent-4: #216749;
+            --accent-5: #2a4679;
+            --border: #cad1c0;
             --font-display: 'Space Grotesk', sans-serif;
             --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
             --font-body: 'Inter', sans-serif;
@@ -78,7 +78,7 @@
         .control-row select, .control-row input[type="number"] { background: var(--bg-code); border: 1px solid var(--border); color: var(--text-primary); border-radius: 4px; padding: 0.3rem 0.5rem; font-family: var(--font-mono); font-size: 0.8rem; }
         .control-row .val { font-family: var(--font-mono); font-size: 0.85rem; color: var(--accent); min-width: 80px; text-align: right; }
         .btn { font-family: var(--font-mono); font-size: 0.8rem; padding: 0.4rem 0.9rem; background: var(--accent-dim); color: var(--accent); border: 1px solid var(--accent); border-radius: 4px; cursor: pointer; transition: background 0.15s ease; }
-        .btn:hover { background: rgba(251,191,36,0.25); }
+        .btn:hover { background: rgba(131,90,2,0.25); }
         .btn:disabled { opacity: 0.4; cursor: not-allowed; }
         .btn.secondary { background: var(--bg-code); color: var(--text-secondary); border-color: var(--border); }
         .metric-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 0.5rem; margin-top: 0.75rem; }
@@ -99,7 +99,7 @@
         th { background: var(--bg-code); color: var(--accent); font-weight: 600; text-align: left; padding: 0.6rem 0.85rem; border-bottom: 1px solid var(--border); font-family: var(--font-display); }
         td { padding: 0.5rem 0.85rem; border-bottom: 1px solid var(--border); color: var(--text-secondary); vertical-align: top; }
         tr:last-child td { border-bottom: none; }
-        tr:nth-child(even) td { background: rgba(13, 17, 23, 0.5); }
+        tr:nth-child(even) td { background: rgba(230,234,223,0.5); }
         @media (max-width: 640px) {
             .slide { padding: 3rem 1rem; min-height: auto; }
             .slide-number { font-size: 3rem; top: 1.5rem; right: 1rem; }
@@ -535,7 +535,7 @@
         const panelY = pad + titleH;
         const panelH = Hc - panelY - 24;
 
-        const colors = ['#fbbf24', '#34d399', '#a78bfa'];
+        const colors = ['#835a02', '#216749', '#633d6a'];
         const titles = ['V vs S', 'Delta vs S', 'Gamma vs S'];
 
         const Smin = 20, Smax = 200;
@@ -563,7 +563,7 @@
             ctx.fillText(titles[p], xp + 4, pad + 12);
 
             // Frame
-            ctx.strokeStyle = '#21262d';
+            ctx.strokeStyle = '#cad1c0';
             ctx.lineWidth = 1;
             ctx.strokeRect(xp, panelY, panelW, panelH);
 
@@ -584,14 +584,14 @@
             // zero line
             if (ymn < 0 && ymx > 0) {
                 const yz = panelY + panelH - (0 - ymn) / (ymx - ymn) * panelH;
-                ctx.strokeStyle = '#3a4252';
+                ctx.strokeStyle = '#afb6a5';
                 ctx.beginPath(); ctx.moveTo(xp, yz); ctx.lineTo(xp + panelW, yz); ctx.stroke();
             }
 
             // strike line
             const Kx = xp + (K - Smin) / (Smax - Smin) * panelW;
             if (Kx > xp && Kx < xp + panelW) {
-                ctx.strokeStyle = '#3a4252';
+                ctx.strokeStyle = '#afb6a5';
                 ctx.setLineDash([3, 3]);
                 ctx.beginPath(); ctx.moveTo(Kx, panelY); ctx.lineTo(Kx, panelY + panelH); ctx.stroke();
                 ctx.setLineDash([]);
@@ -616,15 +616,15 @@
                 else if (p === 1) yVal = isNaN(g.Delta) ? (isCall ? (S > K ? 1 : 0) : (S < K ? -1 : 0)) : g.Delta;
                 else yVal = isNaN(g.Gamma) ? 0 : g.Gamma;
                 const sy = panelY + panelH - (yVal - ymn) / (ymx - ymn) * panelH;
-                ctx.strokeStyle = '#f472b6';
+                ctx.strokeStyle = '#9c405e';
                 ctx.lineWidth = 1;
                 ctx.beginPath(); ctx.moveTo(Sx, panelY); ctx.lineTo(Sx, panelY + panelH); ctx.stroke();
-                ctx.fillStyle = '#f472b6';
+                ctx.fillStyle = '#9c405e';
                 ctx.beginPath(); ctx.arc(Sx, sy, 3.5, 0, 2 * Math.PI); ctx.fill();
             }
 
             // axis labels
-            ctx.fillStyle = '#8b949e';
+            ctx.fillStyle = '#61695c';
             ctx.font = '10px JetBrains Mono';
             ctx.fillText('S=' + Smin, xp + 2, panelY + panelH + 12);
             ctx.fillText('S=' + Smax, xp + panelW - 44, panelY + panelH + 12);
